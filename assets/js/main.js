@@ -147,7 +147,11 @@ const WEATHER_LABEL = { rain: 'rainy night', snow: 'snowy night', clear: 'clear 
 const WEATHER_ICON = { rain: 'cloud-rain', snow: 'snowflake', clear: 'cloud-moon' };
 
 let scene = null;
-const audio = new AudioEngine(playlist, { volume: sceneDefaults.volume });
+const audio = new AudioEngine(playlist, {
+  volume: sceneDefaults.volume,
+  ambience: sceneDefaults.ambience,
+  ambienceVolume: sceneDefaults.ambienceVolume,
+});
 
 // ───────── boot ─────────
 render();
@@ -169,6 +173,7 @@ const loadScene = (async () => {
   scene = new CityScene($('city'), { reducedMotion });
   scene.setWeather(settings.weather, true);
   if (settings.pixel) scene.setPixelMode(true);
+  scene.onLightning = () => audio.thunder();
   scene.start();
   if (new URLSearchParams(location.search).has('debug')) window.__spec = { scene, audio };
 })()
@@ -208,6 +213,7 @@ async function enter() {
   enterEl.classList.add('is-gone');
   setTimeout(() => (enterEl.hidden = true), 1300);
 
+  audio.weather = settings.weather;
   audio.enter();
   await loadScene;
   scene?.flyIn();
@@ -425,16 +431,26 @@ function updateWeatherUI() {
 }
 
 function initDock() {
+  const ambBtn = $('ambience-btn');
   const pxBtn = $('pixel-btn');
+  ambBtn.innerHTML = icons.waves;
   pxBtn.innerHTML = icons['grid-2x2'];
+  const syncAmb = () => ambBtn.classList.toggle('is-on', audio.ambienceOn);
   const syncPx = () => pxBtn.classList.toggle('is-on', settings.pixel);
+  syncAmb();
   syncPx();
 
   const cycleWeather = () => {
     settings.weather = WEATHERS[(WEATHERS.indexOf(settings.weather) + 1) % WEATHERS.length];
     scene?.setWeather(settings.weather);
+    audio.setWeather(settings.weather);
     updateWeatherUI();
     toast(`${WEATHER_LABEL[settings.weather]} ✦`);
+  };
+  const toggleAmb = () => {
+    audio.setAmbience(!audio.ambienceOn);
+    syncAmb();
+    toast(audio.ambienceOn ? 'ambience on' : 'ambience off');
   };
   const togglePx = () => {
     settings.pixel = !settings.pixel;
@@ -449,6 +465,7 @@ function initDock() {
   };
 
   $('weather-btn').addEventListener('click', cycleWeather);
+  ambBtn.addEventListener('click', toggleAmb);
   pxBtn.addEventListener('click', togglePx);
 
   window.addEventListener('keydown', (e) => {
@@ -456,6 +473,7 @@ function initDock() {
     if (e.target.closest('input, textarea')) return;
     const k = e.key.toLowerCase();
     if (k === 'w') cycleWeather();
+    else if (k === 'a') toggleAmb();
     else if (k === 'p') togglePx();
     else if (k === 'm') toggleMute();
     else if (k === 'f') flip(true);

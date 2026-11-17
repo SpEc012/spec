@@ -74,4 +74,6 @@ export const playlist = [
 export const sceneDefaults = {
   weather: 'snow', // every visit starts here: 'snow' | 'rain' | 'clear'
   volume: 0.45,
+  ambience: true, // soft weather sounds (snowy wind, rain patter, far-off thunder)
+  ambienceVolume: 0.25, // how loud the weather is under the music — 0 = silent, 1 = loud
 };

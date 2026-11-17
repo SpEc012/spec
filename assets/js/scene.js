@@ -58,6 +58,7 @@ export class CityScene {
     this.flash = 0;
     this.nextLightning = 18 + Math.random() * 20;
     this.nextShootingStar = 5 + Math.random() * 6;
+    this.onLightning = null;
     this.pixelMode = false;
     this.qualityScale = 1;
     this.running = false;
@@ -971,6 +972,7 @@ export class CityScene {
       this.nextLightning = 22 + Math.random() * 35;
       if (W.rain > 0.6 && !this.reducedMotion) {
         this.flashSeq = [0, 0.09, 0.22, 0.31].map((o, i) => ({ at: t + o, amp: [0.6, 0.22, 0.8, 0.3][i] }));
+        this.onLightning?.();
       }
     }
     let flash = this.flash * Math.exp(-dt * 9);
