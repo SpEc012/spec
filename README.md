@@ -7,19 +7,22 @@ It's a static site (no build step), ready for GitHub Pages.
 ## What's in it
 
 - **Click to enter**: a blurred splash over the live city, which lets the music start (browsers block autoplay with sound until you click).
-- **three.js night city**: about 1,000 procedurally lit buildings, windows that flicker on and off, a waterfront with traffic, blinking tower lights, a pixel-art crescent moon, twinkling pixel stars, drifting haze and the odd shooting star.
-- **Reflective bay**: water with banded, pixel-art-style reflections and rain ripples.
-- **Weather**: rain, snow or a clear night, with smooth crossfades. Rain brings occasional soft lightning and distant thunder.
-- **Ambience**: rain patter and snowy wind are synthesized live with the Web Audio API, so there are no extra audio files.
-- **Music-reactive city**: the window lights and bloom pulse gently with the beat.
-- **3D tilt card**: a frosted-glass card with parallax depth layers, a cursor glare and an animated neon border.
-- **Discord-style profile**: banner, avatar with a neon ring, idle moon status and pixel skulls, a status bubble, the gothic gradient name, a server tag and a badge row with tooltips.
-- **Typed bio**, member-since date, connections and a social icon row. The Discord icon copies your username to the clipboard.
-- **Music player**: a spinning vinyl disc, a pixel visualizer, seek, volume and a playlist (prev/next).
-- **Dock**: weather, ambience, pixel mode (a low-res retro render) and mute. Keyboard shortcuts: `W` `A` `P` `M` `Space`.
-- **Extras**: custom cursor with a pixel-sparkle trail, animated tab title, local clock, film grain, a 404 page, and `prefers-reduced-motion` support.
-- **Live Discord presence (optional)**: shows your real status and what you're playing or listening to, via [Lanyard](https://github.com/Phineas/lanyard).
-- **Adaptive quality**: drops the render resolution on slower GPUs, and falls back to a flat sky if WebGL isn't available.
+- **Horizontal 3D card**: frosted glass that tilts toward your mouse (or phone tilt), with floating depth layers, a moving glare and an animated neon border. Hit **flip** (or press `F`) and it spins over to an "about" side.
+- **Front of the card**:
+  - avatar with a glowing ring and an orbiting star
+  - your name with twinkling sparkles
+  - a typed tagline that cycles through lines
+  - location, badges and a row of glowing social icons
+  - a Discord widget (click it to copy your username) and a music widget
+  - a views counter
+- **Back of the card**: your quote, member-since date, local time, what's on repeat, your links and the keyboard shortcuts.
+- **three.js night city**: about 1,100 buildings with flickering windows, waterfront traffic, blinking tower lights, a pixel-art moon, pixel stars, drifting haze and the odd shooting star, across a bay with pixel-banded reflections.
+- **Weather**: rain, snow or a clear night. Rain brings ripples on the water and soft lightning with distant thunder. The rain and wind sounds are synthesized live, so there are no extra files.
+- **Music**: the city lights pulse with the beat. The player has a spinning vinyl, a pixel visualizer and seek. Volume sits top-left.
+- **Dock (bottom-right)**: weather, ambience and pixel mode. Keys: `W` `A` `P` `M` `F` `Space`.
+- **Extras**: custom cursor with a pixel-sparkle trail, animated tab title, film grain, a 404 page, `prefers-reduced-motion` support and adaptive render quality.
+
+On phones the card stacks vertically, since a sideways card won't fit.
 
 ## Editing
 
@@ -27,16 +30,20 @@ Almost everything lives in **`assets/js/config.js`**:
 
 | what | where |
 | --- | --- |
-| name, username, status bubble, bio | `profile` |
+| name, username, location, Discord status line | `profile` |
+| typed lines under your name | `profile.taglines` |
+| back-of-card quote and member-since date | `profile.about`, `profile.memberSince` |
 | badges (icon + tooltip + color) | `badges` |
-| social links (`#` = placeholder, shows "coming soon") | `socials` |
-| connection rows | `connections` |
-| songs (add more and ⏮ ⏭ will cycle them) | `playlist` |
+| social icons (`#` = placeholder, shows "coming soon") | `socials` |
+| link buttons on the back | `links` |
+| songs (add more and ⏮ ⏭ appear) | `playlist` |
+| views counter on/off | `views` |
 | default weather / ambience / volume | `sceneDefaults` |
 | live Discord status | `profile.discordId` (join the Lanyard server first) |
 
-Icons available for badges and socials are listed in `assets/js/icons.js`.
-The avatar and banner are in `assets/img/`, and music goes in `assets/audio/`.
+Icons for badges and socials are listed in `assets/js/icons.js`. The avatar is in `assets/img/` and music goes in `assets/audio/`.
+
+The views counter uses [counterapi.dev](https://counterapi.dev), a free counter service. Each browser counts once per day. If the service can't be reached, the counter just stays hidden.
 
 ## Run locally
 

@@ -1,7 +1,7 @@
 // ─────────────────────────────────────────────────────────────
 //  SpEc — page controller
 // ─────────────────────────────────────────────────────────────
-import { profile, badges, socials, connections, playlist, sceneDefaults } from './config.js';
+import { profile, views, badges, socials, links, playlist, sceneDefaults } from './config.js';
 import { icons } from './icons.js';
 import { AudioEngine, store } from './audio.js';
 
@@ -9,108 +9,86 @@ const $ = (id) => document.getElementById(id);
 const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
 const finePointer = matchMedia('(pointer: fine)').matches;
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
 
-// ───────── pixel art helpers ─────────
-function pixelSVG(rows, colors, scale = 1) {
-  const h = rows.length, w = rows[0].length;
-  let rects = '';
-  rows.forEach((row, y) =>
-    [...row].forEach((ch, x) => {
-      if (colors[ch]) rects += `<rect x="${x * scale}" y="${y * scale}" width="${scale}" height="${scale}" fill="${colors[ch]}"/>`;
-    })
-  );
-  return `<svg viewBox="0 0 ${w * scale} ${h * scale}" shape-rendering="crispEdges" aria-hidden="true">${rects}</svg>`;
-}
-
-const SKULL = [
-  '..XXXXX..',
-  '.XXXXXXS.',
-  'XXXXXXXSS',
-  'XooXXooXS',
-  'XooXXooXS',
-  'XXXXoXXSS',
-  '.XXXXXXS.',
-  '..XoXoS..',
-  '..XXXSS..',
-];
-const skullSVG = pixelSVG(SKULL, { X: '#ffffff', S: '#cdb8ff', o: '#1a0b2e' });
-
+// ───────── pixel moon for the enter screen ─────────
 function pixelMoonSVG(n = 16) {
-  const rows = [];
   const R = n * 0.44, cx = n / 2, cy = n / 2, ox = n * 0.66, oy = n * 0.38, R2 = n * 0.38;
+  const fill = { L: '#ffe2ff', M: '#f6b8ff', D: '#d98cf0' };
+  let rects = '';
   for (let y = 0; y < n; y++) {
-    let row = '';
     for (let x = 0; x < n; x++) {
       const px = x + 0.5, py = y + 0.5;
       const a = (px - cx) ** 2 + (py - cy) ** 2 <= R * R;
       const b = (px - ox) ** 2 + (py - oy) ** 2 <= R2 * R2;
-      if (a && !b) {
-        const d = Math.sqrt((px - ox) ** 2 + (py - oy) ** 2) - R2;
-        row += d < 1.2 ? 'L' : d < 2.6 ? 'M' : 'D';
-      } else row += '.';
+      if (!a || b) continue;
+      const d = Math.sqrt((px - ox) ** 2 + (py - oy) ** 2) - R2;
+      rects += `<rect x="${x}" y="${y}" width="1" height="1" fill="${fill[d < 1.2 ? 'L' : d < 2.6 ? 'M' : 'D']}"/>`;
     }
-    rows.push(row);
   }
-  return pixelSVG(rows, { L: '#ffe2ff', M: '#f6b8ff', D: '#d98cf0' });
+  return `<svg viewBox="0 0 ${n} ${n}" shape-rendering="crispEdges" aria-hidden="true">${rects}</svg>`;
 }
 
-// ───────── render profile ─────────
-function renderProfile() {
-  $('banner').src = profile.banner;
+// ───────── render ─────────
+function render() {
   $('avatar-img').src = profile.avatar;
   $('avatar-img').alt = `${profile.displayName}'s avatar`;
-  const name = $('display-name');
-  name.textContent = profile.displayName;
-  name.dataset.text = profile.displayName;
-  $('username').textContent = profile.username;
-  $('status-text').textContent = profile.status;
-  $('skulls').innerHTML = skullSVG + skullSVG;
+  $('display-name').textContent = profile.displayName;
   document.querySelector('.enter-moon').innerHTML = pixelMoonSVG(16);
 
+  const loc = $('location');
+  if (profile.location) loc.innerHTML = `${icons['map-pin']}<span>${esc(profile.location)}</span>`;
+  else loc.hidden = true;
+
   $('badges').innerHTML = badges
-    .map(
-      (b) =>
-        `<li class="badge" style="--c:${b.color}" data-tip="${b.label}" tabindex="0" aria-label="${b.label}">${icons[b.icon] ?? ''}</li>`
-    )
+    .map((b) => `<li class="badge" style="--c:${b.color}" data-tip="${esc(b.label)}" tabindex="0" aria-label="${esc(b.label)}">${icons[b.icon] ?? ''}</li>`)
     .join('');
 
-  const brandHover = {
-    discord: '#8b93ff', youtube: '#ff4f6d', tiktok: '#6ff0ff', instagram: '#ff6fd8', x: '#d9d2ff',
+  const glow = {
+    discord: '#8b93ff', youtube: '#ff4f6d', tiktok: '#6ff0ff', instagram: '#ff6fd8', x: '#e4dcff',
     twitch: '#b48cff', spotify: '#5dffa8', steam: '#8fd0ff', github: '#e4dcff', soundcloud: '#ff9a5c',
   };
   $('socials').innerHTML = socials
     .map((s) => {
       const placeholder = !s.copy && (!s.url || s.url === '#');
       const attrs = s.copy
-        ? `href="#" data-copy="${s.copy}"`
-        : `href="${s.url || '#'}" ${placeholder ? 'data-placeholder="1"' : 'target="_blank" rel="noopener"'}`;
-      return `<a class="social${placeholder ? ' is-placeholder' : ''}" ${attrs} data-tip="${s.copy ? `${s.label} · click to copy` : s.label}" aria-label="${s.label}" style="--hc:${brandHover[s.icon] || '#ff6fd8'}">${icons[s.icon] ?? ''}</a>`;
+        ? `href="#" data-copy="${esc(s.copy)}"`
+        : `href="${esc(s.url || '#')}" ${placeholder ? 'data-placeholder="1"' : 'target="_blank" rel="noopener"'}`;
+      const tip = s.copy ? `${s.label} · copy` : s.label;
+      return `<a class="social" ${attrs} data-tip="${esc(tip)}" aria-label="${esc(s.label)}" style="--hc:${glow[s.icon] || '#ff6fd8'}">${icons[s.icon] ?? ''}</a>`;
     })
     .join('');
 
-  $('connections').innerHTML = connections
+  // discord widget
+  $('dw-name').textContent = profile.displayName;
+  $('dw-user').textContent = profile.username;
+  $('dw-status').textContent = profile.status;
+  $('dw-icon').innerHTML = icons.discord;
+
+  // chips
+  $('views-ico').innerHTML = icons.eye;
+  $('flip-ico').innerHTML = icons['refresh-cw'];
+  $('flip-back-ico').innerHTML = icons['undo-2'];
+
+  // back
+  $('about').textContent = profile.about;
+  const [y, m, d] = profile.memberSince.split('-').map(Number);
+  const since = new Date(y, m - 1, d); // local date, so it never slips a day
+  $('member-since').textContent = new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric', year: 'numeric' }).format(since);
+  $('links').innerHTML = links
     .map(
-      (c) => `<li><a class="connection" href="${c.url}" target="_blank" rel="noopener">
-        <span class="ico">${icons[c.icon] ?? icons.globe}</span>
-        <span class="label">${c.label}</span>
-        <span class="arrow">${icons['arrow-up-right']}</span></a></li>`
+      (l) => `<a class="link-btn" href="${esc(l.url)}" target="_blank" rel="noopener">
+        <span class="ico">${icons[l.icon] ?? icons.globe}</span><span>${esc(l.label)}</span>
+        <span class="arrow">${icons['arrow-up-right']}</span></a>`
     )
     .join('');
-
-  // member since (parse as a local date so it never slips a day)
-  const [y, m, d] = profile.memberSince.split('-').map(Number);
-  const since = new Date(y, m - 1, d);
-  const fmt = new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric', year: 'numeric' }).format(since);
-  const now = new Date();
-  let months = (now.getFullYear() - since.getFullYear()) * 12 + (now.getMonth() - since.getMonth());
-  if (now.getDate() < since.getDate()) months--;
-  const yrs = Math.floor(months / 12), mo = months % 12;
-  const rel = [yrs && `${yrs}y`, mo && `${mo}mo`].filter(Boolean).join(' ') || 'new';
-  $('member-since').innerHTML = `${icons.calendar}<span>${fmt}</span><small>· ${rel}</small>`;
 
   // player chrome
   $('prev-btn').innerHTML = icons['skip-back'];
   $('next-btn').innerHTML = icons['skip-forward'];
+  const multi = playlist.length > 1;
+  $('prev-btn').hidden = !multi;
+  $('next-btn').hidden = !multi;
 }
 
 // ───────── toast ─────────
@@ -123,26 +101,40 @@ function toast(msg, ms = 2400) {
   toastTimer = setTimeout(() => t.classList.remove('is-on'), ms);
 }
 
-// ───────── typewriter ─────────
-async function typeInto(el, text, { speed = 32, jitter = 30, caret = true } = {}) {
+// ───────── typing ─────────
+async function typeOnce(el, text, speed = 45) {
   el.textContent = '';
-  const span = document.createElement('span');
-  el.append(span);
-  let c;
-  if (caret) {
-    c = document.createElement('span');
-    c.className = 'caret';
-    el.append(c);
-  }
   if (reducedMotion) {
-    span.textContent = text;
-    return c;
+    el.textContent = text;
+    return;
   }
   for (const ch of text) {
-    span.textContent += ch;
-    await sleep(speed + Math.random() * jitter + (/[,.]/.test(ch) ? 180 : 0));
+    el.textContent += ch;
+    await sleep(speed + Math.random() * 30);
   }
-  return c;
+}
+
+// types a line, waits, backspaces it, moves on — forever
+async function taglineLoop(el, lines) {
+  if (!lines.length) return;
+  if (reducedMotion) {
+    el.textContent = lines[0];
+    return;
+  }
+  for (let i = 0; ; i++) {
+    const chars = Array.from(lines[i % lines.length]);
+    for (let k = 1; k <= chars.length; k++) {
+      el.textContent = chars.slice(0, k).join('');
+      const ch = chars[k - 1];
+      await sleep(34 + Math.random() * 38 + (/[,.]/.test(ch) ? 220 : 0));
+    }
+    await sleep(2800);
+    for (let k = chars.length; k >= 0; k--) {
+      el.textContent = chars.slice(0, k).join('');
+      await sleep(16);
+    }
+    await sleep(420);
+  }
 }
 
 // ───────── state ─────────
@@ -158,17 +150,18 @@ let scene = null;
 const audio = new AudioEngine(playlist, { volume: sceneDefaults.volume, ambience: sceneDefaults.rainSound });
 
 // ───────── boot ─────────
-renderProfile();
+render();
 initCursor();
 initTitle();
 initClock();
+initVolume();
 updateWeatherUI();
 
 const progress = { total: 4, done: 0 };
-function step() {
+const step = () => {
   progress.done++;
   $('enter-progress').style.width = `${(progress.done / progress.total) * 100}%`;
-}
+};
 
 const loadScene = (async () => {
   const { CityScene, webglAvailable } = await import('./scene.js');
@@ -187,9 +180,7 @@ const loadScene = (async () => {
   .finally(step);
 
 const loadFonts = (document.fonts?.ready ?? Promise.resolve()).finally(step);
-const loadImages = Promise.all(
-  [$('avatar-img'), $('banner')].map((img) => (img.decode ? img.decode().catch(() => {}) : Promise.resolve()))
-).finally(step);
+const loadImages = ($('avatar-img').decode?.() ?? Promise.resolve()).catch(() => {}).finally(step);
 const loadAudio = new Promise((res) => {
   if (audio.el.readyState >= 3) return res();
   audio.el.addEventListener('canplay', res, { once: true });
@@ -197,21 +188,19 @@ const loadAudio = new Promise((res) => {
   setTimeout(res, 5000); // mobile browsers often won't preload — don't block
 }).finally(step);
 
-typeInto($('enter-text'), 'waking the city', { caret: false, speed: 40 });
-
 const enterEl = $('enter');
 enterEl.classList.add('is-loading');
-let ready = false;
+typeOnce($('enter-text'), 'waking the city', 40);
+
+let entered = false;
 Promise.all([loadScene, loadFonts, loadImages, loadAudio]).then(async () => {
-  ready = true;
   enterEl.classList.remove('is-loading');
   enterEl.classList.add('is-ready');
   await sleep(250);
-  if (!entered) typeInto($('enter-text'), 'click to enter', { caret: false, speed: 55 });
+  if (!entered) typeOnce($('enter-text'), 'click to enter', 55);
 });
 
 // ───────── enter ─────────
-let entered = false;
 async function enter() {
   if (entered) return;
   entered = true;
@@ -226,13 +215,14 @@ async function enter() {
   scene?.flyIn();
 
   initTilt();
+  initFlip();
   initPlayer();
   initDock();
   initPresence();
+  initViews();
 
-  await sleep(reducedMotion ? 0 : 1700);
-  const caret = await typeInto($('bio'), profile.bio, { speed: 26, jitter: 26 });
-  setTimeout(() => caret?.remove(), 2600);
+  await sleep(reducedMotion ? 0 : 1500);
+  taglineLoop($('tagline'), profile.taglines);
 }
 
 enterEl.addEventListener('click', enter);
@@ -245,7 +235,7 @@ window.addEventListener('keydown', (e) => {
 
 // ───────── 3D tilt ─────────
 function initTilt() {
-  const tilt = $('stage'); // --rx/--ry inherit to the glass + tilt layers
+  const stage = $('stage'); // --rx/--ry inherit to the glass + card
   const card = $('card');
   const target = { x: 0, y: 0, gx: 50, gy: 0 };
   const cur = { x: 0, y: 0, gx: 50, gy: 0 };
@@ -263,7 +253,7 @@ function initTilt() {
     lastMove = performance.now();
     scene?.setPointer(nx, -ny);
   });
-  document.addEventListener('pointerleave', () => {
+  document.documentElement.addEventListener('pointerleave', () => {
     target.x = target.y = 0;
     scene?.setPointer(0, 0);
   });
@@ -280,56 +270,57 @@ function initTilt() {
   const strength = reducedMotion ? 0 : 1;
   const loop = (t) => {
     requestAnimationFrame(loop);
-    // gentle idle sway when nobody's moving
-    const idle = performance.now() - lastMove > 4000;
-    const tx = idle ? Math.sin(t / 3200) * 0.25 : target.x;
-    const ty = idle ? Math.cos(t / 4100) * 0.18 : target.y;
+    const idle = performance.now() - lastMove > 4000; // gentle sway when nobody's moving
+    const tx = idle ? Math.sin(t / 3200) * 0.3 : target.x;
+    const ty = idle ? Math.cos(t / 4100) * 0.22 : target.y;
     cur.x += (tx - cur.x) * 0.07;
     cur.y += (ty - cur.y) * 0.07;
     cur.gx += (target.gx - cur.gx) * 0.12;
     cur.gy += (target.gy - cur.gy) * 0.12;
-    tilt.style.setProperty('--ry', `${(cur.x * 11 * strength).toFixed(3)}deg`);
-    tilt.style.setProperty('--rx', `${(-cur.y * 8 * strength).toFixed(3)}deg`);
+    stage.style.setProperty('--ry', `${(cur.x * 12 * strength).toFixed(3)}deg`);
+    stage.style.setProperty('--rx', `${(-cur.y * 9 * strength).toFixed(3)}deg`);
     card.style.setProperty('--gx', `${cur.gx.toFixed(1)}%`);
     card.style.setProperty('--gy', `${cur.gy.toFixed(1)}%`);
   };
   requestAnimationFrame(loop);
 }
 
-// ───────── player ─────────
-function fmtTime(s) {
-  if (!isFinite(s)) return '0:00';
-  const m = Math.floor(s / 60);
-  return `${m}:${String(Math.floor(s % 60)).padStart(2, '0')}`;
+// ───────── flip ─────────
+let flip = () => {};
+function initFlip() {
+  const stage = $('stage');
+  const front = document.querySelector('.face.front');
+  const back = document.querySelector('.face.back');
+  back.inert = true;
+  flip = (moveFocus = false) => {
+    const flipped = stage.classList.toggle('is-flipped');
+    front.inert = flipped;
+    back.inert = !flipped;
+    if (moveFocus) setTimeout(() => (flipped ? $('flip-back-btn') : $('flip-btn')).focus({ preventScroll: true }), 500);
+  };
+  $('flip-btn').addEventListener('click', () => flip(true));
+  $('flip-back-btn').addEventListener('click', () => flip(true));
 }
+
+// ───────── player ─────────
+const fmtTime = (s) => (isFinite(s) ? `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, '0')}` : '0:00');
 
 function initPlayer() {
   const el = audio.el;
   const player = $('player');
   const playBtn = $('play-btn');
   const bar = $('bar');
-  const vol = $('vol');
-  const volBtn = $('vol-btn');
 
   const syncTrack = () => {
     $('track-title').textContent = audio.track.title;
     $('track-artist').textContent = audio.track.artist;
-    player.querySelector('.loop-tag').textContent = playlist.length > 1 ? `${audio.index + 1} / ${playlist.length}` : 'on repeat';
+    $('back-track').textContent = `${audio.track.title} — ${audio.track.artist}`;
   };
   const syncPlay = () => {
     const playing = !el.paused;
     playBtn.innerHTML = playing ? icons.pause : icons.play;
     playBtn.setAttribute('aria-label', playing ? 'Pause' : 'Play');
     player.classList.toggle('is-playing', playing);
-  };
-  const syncVol = () => {
-    const v = audio.muted ? 0 : audio.volume;
-    vol.value = v;
-    vol.style.setProperty('--v', `${v * 100}%`);
-    const ic = v === 0 ? icons['volume-x'] : v < 0.5 ? icons['volume-1'] : icons['volume-2'];
-    volBtn.innerHTML = ic;
-    $('mute-btn').innerHTML = ic;
-    $('mute-btn').classList.toggle('is-on', !audio.muted);
   };
   let dragging = false;
   const syncTime = () => {
@@ -347,7 +338,7 @@ function initPlayer() {
   el.addEventListener('pause', syncPlay);
   el.addEventListener('timeupdate', syncTime);
   el.addEventListener('loadedmetadata', () => { syncTime(); syncTrack(); });
-  syncTrack(); syncPlay(); syncVol(); syncTime();
+  syncTrack(); syncPlay(); syncTime();
 
   playBtn.addEventListener('click', () => audio.toggle());
   $('next-btn').addEventListener('click', () => { audio.next(); syncTrack(); });
@@ -382,10 +373,6 @@ function initPlayer() {
     if (e.key === 'ArrowLeft') el.currentTime = Math.max(0, el.currentTime - 5);
   });
 
-  vol.addEventListener('input', () => { audio.setVolume(parseFloat(vol.value)); syncVol(); });
-  volBtn.addEventListener('click', () => { audio.setMuted(!audio.muted); syncVol(); });
-  audio.syncVol = syncVol;
-
   // visualizer + music-reactive city
   const viz = $('viz');
   const vctx = viz.getContext('2d');
@@ -396,7 +383,7 @@ function initPlayer() {
   grad.addColorStop(0, '#6ff0ff');
   grad.addColorStop(0.5, '#b49cff');
   grad.addColorStop(1, '#ff6fd8');
-  const N = 14;
+  const N = 10;
   const loop = (t) => {
     requestAnimationFrame(loop);
     audio.update();
@@ -404,25 +391,39 @@ function initPlayer() {
     const bars = audio.bars(N, t / 1000);
     vctx.clearRect(0, 0, viz.width, viz.height);
     vctx.fillStyle = grad;
-    vctx.shadowColor = '#ff6fd8';
-    vctx.shadowBlur = 6 * dpr;
     const bw = viz.width / N;
-    // pixel-stepped bars to match the art style
-    const px = 3 * dpr;
+    const px = 2 * dpr; // pixel-stepped bars to match the art style
     for (let i = 0; i < N; i++) {
-      const h = Math.max(px, Math.round((bars[i] * viz.height * 0.95) / px) * px);
-      vctx.fillRect(Math.round(i * bw + bw * 0.18), viz.height - h, Math.ceil(bw * 0.64), h);
+      const h = Math.max(px, Math.round((bars[i] * viz.height) / px) * px);
+      vctx.fillRect(Math.round(i * bw + bw * 0.2), viz.height - h, Math.ceil(bw * 0.6), h);
     }
   };
   requestAnimationFrame(loop);
 }
 
-// ───────── dock / settings ─────────
+// ───────── volume (top-left) ─────────
+function initVolume() {
+  const vol = $('vol');
+  const btn = $('vol-btn');
+  const sync = () => {
+    const v = audio.muted ? 0 : audio.volume;
+    vol.value = v;
+    vol.style.setProperty('--v', `${v * 100}%`);
+    btn.innerHTML = v === 0 ? icons['volume-x'] : v < 0.5 ? icons['volume-1'] : icons['volume-2'];
+    btn.setAttribute('aria-label', audio.muted ? 'Unmute' : 'Mute');
+  };
+  vol.addEventListener('input', () => { audio.setVolume(parseFloat(vol.value)); sync(); });
+  btn.addEventListener('click', () => { audio.setMuted(!audio.muted); sync(); });
+  audio.syncVol = sync;
+  sync();
+}
+
+// ───────── dock / shortcuts / socials ─────────
 function updateWeatherUI() {
   const w = settings.weather;
-  $('weather-chip').innerHTML = `${icons[WEATHER_ICON[w]]}<span>${WEATHER_LABEL[w]}</span>`;
   $('weather-btn').innerHTML = icons[WEATHER_ICON[w]];
-  $('weather-btn').dataset.tip = `weather: ${w} · W`;
+  $('weather-btn').dataset.tip = `${WEATHER_LABEL[w]} · W`;
+  $('hud-weather').textContent = WEATHER_LABEL[w];
 }
 
 function initDock() {
@@ -434,7 +435,6 @@ function initDock() {
   const syncPx = () => pxBtn.classList.toggle('is-on', settings.pixel);
   syncAmb();
   syncPx();
-  audio.syncVol?.();
 
   const cycleWeather = () => {
     settings.weather = WEATHERS[(WEATHERS.indexOf(settings.weather) + 1) % WEATHERS.length];
@@ -464,7 +464,6 @@ function initDock() {
   $('weather-btn').addEventListener('click', cycleWeather);
   ambBtn.addEventListener('click', toggleAmb);
   pxBtn.addEventListener('click', togglePx);
-  $('mute-btn').addEventListener('click', toggleMute);
 
   window.addEventListener('keydown', (e) => {
     if (e.metaKey || e.ctrlKey || e.altKey) return;
@@ -474,32 +473,65 @@ function initDock() {
     else if (k === 'a') toggleAmb();
     else if (k === 'p') togglePx();
     else if (k === 'm') toggleMute();
+    else if (k === 'f') flip(true);
     else if (k === ' ' && !e.target.closest('button, a, [role="slider"]')) {
       e.preventDefault();
       audio.toggle();
     }
   });
 
-  // socials: copy-to-clipboard + placeholder notice
-  $('socials').addEventListener('click', async (e) => {
+  const copy = async (text) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      toast(`copied “${text}” ✦`);
+    } catch {
+      toast(text);
+    }
+  };
+  $('socials').addEventListener('click', (e) => {
     const a = e.target.closest('a');
     if (!a) return;
     if (a.dataset.copy) {
       e.preventDefault();
-      try {
-        await navigator.clipboard.writeText(a.dataset.copy);
-        toast(`copied “${a.dataset.copy}” ✦`);
-      } catch {
-        toast(a.dataset.copy);
-      }
+      copy(a.dataset.copy);
     } else if (a.dataset.placeholder) {
       e.preventDefault();
       toast(`${a.getAttribute('aria-label').toLowerCase()} link coming soon ☾`);
     }
   });
+  $('discord-widget').addEventListener('click', () => copy(profile.username));
 
   const t = audio.track;
   setTimeout(() => toast(`♫ now playing — ${t.title} · ${t.artist}`, 3600), 1800);
+}
+
+// ───────── view counter (counterapi.dev) ─────────
+async function initViews() {
+  if (!views.enabled) return;
+  const base = `https://api.counterapi.dev/v1/${encodeURIComponent(views.namespace)}/${encodeURIComponent(views.key)}`;
+  const today = new Date().toDateString();
+  const firstToday = store.get('viewed', '') !== today; // one view per browser per day
+  try {
+    const ctrl = new AbortController();
+    setTimeout(() => ctrl.abort(), 6000);
+    const res = await fetch(firstToday ? `${base}/up` : base, { signal: ctrl.signal });
+    if (!res.ok) return;
+    const data = await res.json();
+    const n = Number(data?.count);
+    if (!Number.isFinite(n)) return;
+    if (firstToday) store.set('viewed', today);
+    $('views-chip').hidden = false;
+    const el = $('views');
+    const t0 = performance.now();
+    const tick = () => {
+      const k = Math.min(1, (performance.now() - t0) / 1400);
+      el.textContent = Math.round(n * (1 - Math.pow(1 - k, 3))).toLocaleString();
+      if (k < 1) requestAnimationFrame(tick);
+    };
+    tick();
+  } catch {
+    /* offline or blocked — the chip just stays hidden */
+  }
 }
 
 // ───────── Discord presence via Lanyard (optional) ─────────
@@ -515,17 +547,12 @@ function initPresence() {
       if (!success) return;
       dot.dataset.status = data.discord_status;
       dot.title = labels[data.discord_status] || '';
-      dot.setAttribute('aria-label', dot.title);
       const custom = data.activities?.find((a) => a.type === 4);
-      if (custom?.state) $('status-text').textContent = custom.state;
-      let line = '';
-      if (data.listening_to_spotify && data.spotify) line = `${icons.music}<span>${data.spotify.song} — ${data.spotify.artist}</span>`;
-      else {
-        const game = data.activities?.find((a) => a.type === 0);
-        if (game) line = `${icons['gamepad-2']}<span>playing ${game.name}</span>`;
-      }
-      $('presence').hidden = !line;
-      if (line) $('presence-text').innerHTML = line;
+      const game = data.activities?.find((a) => a.type === 0);
+      let line = esc(custom?.state || profile.status);
+      if (data.listening_to_spotify && data.spotify) line = `${icons.music}${esc(data.spotify.song)} — ${esc(data.spotify.artist)}`;
+      else if (game) line = `${icons['gamepad-2']}playing ${esc(game.name)}`;
+      $('dw-status').innerHTML = line;
     } catch {}
   };
   poll();
@@ -535,9 +562,9 @@ function initPresence() {
 // ───────── clock + tab title ─────────
 function initClock() {
   const tick = () => {
-    const d = new Date();
-    $('clock').textContent = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }).toLowerCase();
-    $('hud-weather').textContent = `♫ ${audio.track.title.toLowerCase()}`;
+    const s = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }).toLowerCase();
+    $('clock').textContent = s;
+    $('back-clock').textContent = s;
   };
   tick();
   setInterval(tick, 10000);
@@ -550,9 +577,7 @@ function initTitle() {
   for (let i = 0; i < 6; i++) frames.push(full);
   for (let i = full.length - 1; i >= 1; i--) frames.push(full.slice(0, i));
   let i = 0;
-  setInterval(() => {
-    document.title = frames[i++ % frames.length] || profile.displayName;
-  }, 380);
+  setInterval(() => (document.title = frames[i++ % frames.length] || profile.displayName), 380);
 }
 
 // ───────── cursor + pixel sparkle trail ─────────
@@ -601,13 +626,11 @@ function initCursor() {
     cur.classList.add('is-active');
     pos.x = e.clientX;
     pos.y = e.clientY;
-    const dist = Math.hypot(pos.x - last.x, pos.y - last.y);
-    if (dist > 14) {
+    if (Math.hypot(pos.x - last.x, pos.y - last.y) > 14) {
       spawn(pos.x, pos.y, 1);
       last = { ...pos };
     }
-    const hover = e.target.closest('a, button, [role="button"], [role="slider"], input, .badge');
-    cur.classList.toggle('is-hover', !!hover);
+    cur.classList.toggle('is-hover', !!e.target.closest('a, button, [role="button"], [role="slider"], input, .badge'));
   });
   addEventListener('pointerdown', (e) => {
     cur.classList.add('is-down');

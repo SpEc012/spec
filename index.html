@@ -25,7 +25,6 @@
     />
     <link rel="stylesheet" href="assets/css/style.css" />
     <link rel="preload" href="assets/img/avatar.webp" as="image" />
-    <link rel="preload" href="assets/img/banner.webp" as="image" />
 
     <script type="importmap">
       {
@@ -59,106 +58,135 @@
       <p class="enter-hint">headphones on ✦ turn it up a little</p>
     </div>
 
-    <!-- profile -->
+    <!-- the card -->
     <main class="stage" id="stage">
       <!-- frosted glass lives outside the 3D layer stack so backdrop blur works -->
       <div class="glass" aria-hidden="true"></div>
+
       <div class="tilt" id="tilt">
-        <article class="card" id="card" aria-label="Profile card">
+        <!-- ─── front ─── -->
+        <article class="face front" id="card" aria-label="Profile">
           <div class="card-border" aria-hidden="true"></div>
           <div class="card-glare" aria-hidden="true"></div>
 
-          <div class="card-content">
-            <header class="banner">
-              <img class="banner-img" id="banner" alt="" />
-              <div class="banner-shine" aria-hidden="true"></div>
-              <span class="chip chip-views" id="weather-chip" title="Current weather in the city"></span>
-            </header>
-
-            <div class="avatar-row">
-              <div class="avatar" id="avatar">
-                <span class="avatar-ring" aria-hidden="true"></span>
-                <img class="avatar-img" id="avatar-img" alt="" />
-                <span class="status-dot" id="status-dot" title="Idle" aria-label="Idle"></span>
-                <span class="skulls" id="skulls" aria-hidden="true"></span>
-              </div>
-              <div class="status-bubble" id="status-bubble">
-                <span id="status-text"></span>
-              </div>
+          <div class="face-content">
+            <div class="corner">
+              <span class="chip" id="views-chip" hidden title="Profile views">
+                <span class="chip-ico" id="views-ico"></span><span id="views">0</span>
+              </span>
+              <button class="chip chip-btn" id="flip-btn" aria-label="Flip the card">
+                <span class="chip-ico" id="flip-ico"></span>flip
+              </button>
             </div>
 
-            <section class="identity">
-              <h1 class="display-name">
-                <span class="name-text" id="display-name"></span>
-                <span class="name-emoji" aria-hidden="true">
-                  <svg viewBox="0 0 20 20"><circle cx="10" cy="10" r="9" fill="#ff9be6" /><circle cx="7" cy="8" r="1.4" fill="#3a0f3d" /><circle cx="13" cy="8" r="1.4" fill="#3a0f3d" /><path d="M6 11.5c1 2.2 7 2.2 8 0" fill="none" stroke="#3a0f3d" stroke-width="1.5" stroke-linecap="round" /></svg>
-                </span>
-              </h1>
-              <p class="handle">
-                <span id="username"></span>
-                <span class="dot-sep" aria-hidden="true">•</span>
-                <span class="server-tag" title="Server tag"><img src="assets/img/avatar.webp" alt="" />SpEc</span>
-              </p>
-              <ul class="badges" id="badges" aria-label="Badges"></ul>
-            </section>
+            <header class="hero">
+              <div class="avatar">
+                <span class="avatar-glow" aria-hidden="true"></span>
+                <span class="avatar-ring" aria-hidden="true"></span>
+                <img class="avatar-img" id="avatar-img" alt="" />
+                <span class="avatar-orbit" aria-hidden="true"><i></i></span>
+              </div>
+
+              <div class="hero-text">
+                <h1 class="name">
+                  <span class="name-text" id="display-name"></span>
+                  <span class="name-sparkles" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span>
+                </h1>
+                <p class="tagline" aria-live="off">
+                  <span id="tagline"></span><span class="caret" aria-hidden="true"></span>
+                </p>
+                <div class="meta-row">
+                  <span class="meta" id="location"></span>
+                  <ul class="badges" id="badges" aria-label="Badges"></ul>
+                </div>
+              </div>
+            </header>
 
             <nav class="socials" id="socials" aria-label="Socials"></nav>
 
-            <section class="block">
-              <h2>Bio</h2>
-              <p class="bio" id="bio" aria-live="off"></p>
-            </section>
+            <div class="widgets">
+              <button class="widget discord" id="discord-widget" aria-label="Copy Discord username">
+                <span class="dw-avatar">
+                  <img src="assets/img/avatar.webp" alt="" />
+                  <span class="status-dot" id="status-dot" data-status="idle" title="Idle"></span>
+                </span>
+                <span class="dw-text">
+                  <span class="dw-name"><span id="dw-name"></span><span class="dw-user" id="dw-user"></span></span>
+                  <span class="dw-status" id="dw-status"></span>
+                </span>
+                <span class="dw-icon" id="dw-icon" aria-hidden="true"></span>
+              </button>
 
-            <section class="block block-row">
-              <div>
-                <h2>Member Since</h2>
-                <p class="meta" id="member-since"></p>
-              </div>
-              <div class="grow">
-                <h2>Connections</h2>
-                <ul class="connections" id="connections"></ul>
-              </div>
-            </section>
-
-            <section class="block presence" id="presence" hidden>
-              <h2>Right Now</h2>
-              <p class="meta" id="presence-text"></p>
-            </section>
-
-            <section class="player" id="player" aria-label="Music player">
-              <div class="player-top">
-                <div class="disc" id="disc" aria-hidden="true"><span class="disc-label"></span></div>
+              <section class="widget player" id="player" aria-label="Music player">
+                <div class="disc" aria-hidden="true"><span class="disc-label"></span></div>
                 <div class="track">
-                  <p class="track-title" id="track-title"></p>
+                  <div class="track-row">
+                    <p class="track-title" id="track-title"></p>
+                    <canvas class="viz" id="viz" aria-hidden="true"></canvas>
+                  </div>
                   <p class="track-artist" id="track-artist"></p>
-                </div>
-                <canvas class="viz" id="viz" aria-hidden="true"></canvas>
-              </div>
-              <div class="progress">
-                <span class="time" id="time-cur">0:00</span>
-                <div class="bar" id="bar" role="slider" tabindex="0" aria-label="Seek" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
-                  <div class="bar-fill" id="bar-fill"></div>
-                  <div class="bar-knob" id="bar-knob"></div>
-                </div>
-                <span class="time" id="time-dur">0:00</span>
-              </div>
-              <div class="player-controls">
-                <div class="volume">
-                  <button class="icon-btn sm" id="vol-btn" aria-label="Mute"></button>
-                  <input type="range" id="vol" min="0" max="1" step="0.01" aria-label="Volume" />
+                  <div class="progress">
+                    <span class="time" id="time-cur">0:00</span>
+                    <div class="bar" id="bar" role="slider" tabindex="0" aria-label="Seek" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+                      <div class="bar-fill" id="bar-fill"></div>
+                      <div class="bar-knob" id="bar-knob"></div>
+                    </div>
+                    <span class="time" id="time-dur">0:00</span>
+                  </div>
                 </div>
                 <div class="transport">
-                  <button class="icon-btn" id="prev-btn" aria-label="Previous"></button>
+                  <button class="icon-btn sm" id="prev-btn" aria-label="Previous" hidden></button>
                   <button class="icon-btn play" id="play-btn" aria-label="Play"></button>
-                  <button class="icon-btn" id="next-btn" aria-label="Next"></button>
+                  <button class="icon-btn sm" id="next-btn" aria-label="Next" hidden></button>
                 </div>
-                <div class="loop-tag" aria-hidden="true">on repeat</div>
+              </section>
+            </div>
+          </div>
+        </article>
+
+        <!-- ─── back ─── -->
+        <article class="face back" aria-label="About">
+          <div class="card-border" aria-hidden="true"></div>
+          <div class="face-content back-content">
+            <div class="corner">
+              <button class="chip chip-btn" id="flip-back-btn" aria-label="Flip back">
+                <span class="chip-ico" id="flip-back-ico"></span>back
+              </button>
+            </div>
+
+            <p class="back-kicker">✦ about</p>
+            <p class="back-quote" id="about"></p>
+
+            <div class="facts">
+              <div class="fact">
+                <span class="fact-label">member since</span>
+                <span class="fact-value" id="member-since"></span>
               </div>
-            </section>
+              <div class="fact">
+                <span class="fact-label">local time</span>
+                <span class="fact-value" id="back-clock"></span>
+              </div>
+              <div class="fact">
+                <span class="fact-label">on repeat</span>
+                <span class="fact-value" id="back-track"></span>
+              </div>
+            </div>
+
+            <div class="back-links" id="links"></div>
+
+            <p class="shortcuts">
+              <kbd>W</kbd> weather <kbd>A</kbd> ambience <kbd>P</kbd> pixel <kbd>M</kbd> mute <kbd>F</kbd> flip
+            </p>
           </div>
         </article>
       </div>
     </main>
+
+    <!-- volume (top-left, guns.lol style) -->
+    <div class="vol-pill" id="vol-pill">
+      <button class="icon-btn sm" id="vol-btn" aria-label="Mute"></button>
+      <input type="range" id="vol" min="0" max="1" step="0.01" aria-label="Volume" />
+    </div>
 
     <!-- hud -->
     <div class="hud-left" aria-hidden="true">
@@ -171,7 +199,6 @@
       <button class="icon-btn" id="weather-btn" data-tip="weather · W"></button>
       <button class="icon-btn" id="ambience-btn" data-tip="ambience · A"></button>
       <button class="icon-btn" id="pixel-btn" data-tip="pixel mode · P"></button>
-      <button class="icon-btn" id="mute-btn" data-tip="mute · M"></button>
     </aside>
 
     <div class="toast" id="toast" role="status" aria-live="polite"></div>

@@ -1,5 +1,5 @@
 // ─────────────────────────────────────────────────────────────
-//  SpEc — profile config
+//  SpEc — page config
 //  Everything you'd want to tweak lives here. Links set to "#"
 //  are placeholders: swap them for your real URLs whenever.
 // ─────────────────────────────────────────────────────────────
@@ -7,20 +7,36 @@
 export const profile = {
   displayName: 'Æon',
   username: 's.p.e_c',
-  // little bubble next to the avatar (like a Discord custom status)
-  status: 'lost in the city lights',
-  bio: '“your value doesn’t decrease because of someone’s inability to see your worth, even if that person is you.”',
-  memberSince: '2024-10-06',
   avatar: 'assets/img/avatar.webp',
-  banner: 'assets/img/banner.webp',
+  location: 'somewhere in the city',
+
+  // typed under your name — it types, pauses, deletes, then moves to the next line
+  taglines: [
+    'your value doesn’t decrease because of someone’s inability to see your worth.',
+    'even if that person is you.',
+    'the city never sleeps ☾',
+  ],
+
+  // the Discord widget's status line (replaced by your live status if discordId is set)
+  status: 'lost in the city lights',
+
+  // back of the card
+  about: '“your value doesn’t decrease because of someone’s inability to see your worth, even if that person is you.”',
+  memberSince: '2024-10-06',
 
   // Optional: live Discord presence through Lanyard (https://github.com/Phineas/lanyard).
   // Join the Lanyard Discord server, then paste your Discord user ID here (e.g. '123456789012345678').
-  // Leave empty to show the static "idle" moon instead.
   discordId: '',
 };
 
-// Badge row under the name. `icon` is a key from icons.js.
+// Page view counter (counterapi.dev, free, no sign-up). The chip stays hidden if it can't load.
+export const views = {
+  enabled: true,
+  namespace: 'spec012-bio',
+  key: 'views',
+};
+
+// Little icons next to your location. `icon` is a key from icons.js.
 export const badges = [
   { icon: 'moon', label: 'Night Owl', color: '#ffd36e' },
   { icon: 'gamepad-2', label: 'Gamer', color: '#7ee8ff' },
@@ -28,7 +44,6 @@ export const badges = [
   { icon: 'gift', label: 'Gifter', color: '#ff8fd8' },
   { icon: 'music', label: 'Audiophile', color: '#c7a6ff' },
   { icon: 'sparkles', label: 'Early Supporter', color: '#ffb8f0' },
-  { icon: 'zap', label: 'Server Booster', color: '#ff7ad9' },
 ];
 
 // Social icon row. `icon` is a key from icons.js.
@@ -45,12 +60,12 @@ export const socials = [
   { icon: 'github', label: 'GitHub', url: '#' },
 ];
 
-// "Connections" section (bigger link rows).
-export const connections = [
+// Link buttons on the back of the card.
+export const links = [
   { icon: 'globe', label: 'dineroshop.xyz', url: 'https://dineroshop.xyz' },
 ];
 
-// Background music. Add more tracks and the ⏮ ⏭ buttons will cycle them.
+// Background music. Add more tracks and ⏮ ⏭ buttons appear to cycle them.
 export const playlist = [
   { title: 'House Song', artist: 'Searows', src: 'assets/audio/house-song.mp3' },
 ];
