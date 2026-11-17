@@ -72,7 +72,6 @@ export const playlist = [
 
 // Scene defaults.
 export const sceneDefaults = {
-  weather: 'rain', // 'rain' | 'snow' | 'clear'
-  rainSound: true, // soft synthesized rain under the music
+  weather: 'snow', // every visit starts here: 'snow' | 'rain' | 'clear'
   volume: 0.45,
 };

@@ -17,9 +17,9 @@ It's a static site (no build step), ready for GitHub Pages.
   - a views counter
 - **Back of the card**: your quote, member-since date, local time, what's on repeat, your links and the keyboard shortcuts.
 - **three.js night city**: about 1,100 buildings with flickering windows, waterfront traffic, blinking tower lights, a pixel-art moon, pixel stars, drifting haze and the odd shooting star, across a bay with pixel-banded reflections.
-- **Weather**: rain, snow or a clear night. Rain brings ripples on the water and soft lightning with distant thunder. The rain and wind sounds are synthesized live, so there are no extra files.
+- **Weather**: every visit starts on a snowy night. Press `W` to switch to rain (with ripples on the water and soft, silent lightning) or a clear night. The weather is visual only, so the music is the only sound.
 - **Music**: the city lights pulse with the beat. The player has a spinning vinyl, a pixel visualizer and seek. Volume sits top-left.
-- **Dock (bottom-right)**: weather, ambience and pixel mode. Keys: `W` `A` `P` `M` `F` `Space`.
+- **Dock (bottom-right)**: weather and pixel mode. Keys: `W` `P` `M` `F` `Space`.
 - **Extras**: custom cursor with a pixel-sparkle trail, animated tab title, film grain, a 404 page, `prefers-reduced-motion` support and adaptive render quality.
 
 On phones the card stacks vertically, since a sideways card won't fit.
@@ -38,7 +38,7 @@ Almost everything lives in **`assets/js/config.js`**:
 | link buttons on the back | `links` |
 | songs (add more and ⏮ ⏭ appear) | `playlist` |
 | views counter on/off | `views` |
-| default weather / ambience / volume | `sceneDefaults` |
+| starting weather / default volume | `sceneDefaults` |
 | live Discord status | `profile.discordId` (join the Lanyard server first) |
 
 Icons for badges and socials are listed in `assets/js/icons.js`. The avatar is in `assets/img/` and music goes in `assets/audio/`.

@@ -1,6 +1,6 @@
 // ─────────────────────────────────────────────────────────────
-//  Audio: background music + analyser + synthesized ambience
-//  (rain patter, snowy wind, distant thunder — no extra files)
+//  Audio: background music + analyser (for the visualizer and
+//  the music-reactive city lights)
 // ─────────────────────────────────────────────────────────────
 
 const store = {
@@ -21,7 +21,7 @@ const store = {
 export { store };
 
 export class AudioEngine {
-  constructor(playlist, { volume = 0.45, ambience = true } = {}) {
+  constructor(playlist, { volume = 0.45 } = {}) {
     this.playlist = playlist;
     this.index = 0;
     this.el = new Audio();
@@ -31,8 +31,6 @@ export class AudioEngine {
     this.el.src = playlist[0].src;
     this.volume = store.get('volume', volume);
     this.muted = store.get('muted', false);
-    this.ambienceOn = store.get('ambience', ambience);
-    this.weather = 'rain';
     this.ctx = null;
     this.level = 0;
     this.bins = null;
@@ -70,7 +68,6 @@ export class AudioEngine {
           this.useGraph = false;
         }
       }
-      this.#buildAmbience();
     }
     if (this.ctx?.state === 'suspended') await this.ctx.resume();
 
@@ -81,7 +78,6 @@ export class AudioEngine {
       /* autoplay refused: the play button still works */
     }
     this.#fadeMusic(1, 2.5);
-    this.setWeather(this.weather);
   }
 
   #fadeMusic(to, secs) {
@@ -102,132 +98,6 @@ export class AudioEngine {
       };
       step();
     }
-  }
-
-  // ── ambience ──
-  #noiseBuffer(seconds, kind) {
-    const ctx = this.ctx;
-    const len = Math.floor(ctx.sampleRate * seconds);
-    const buf = ctx.createBuffer(2, len, ctx.sampleRate);
-    for (let ch = 0; ch < 2; ch++) {
-      const d = buf.getChannelData(ch);
-      if (kind === 'white') {
-        for (let i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
-      } else if (kind === 'brown') {
-        let last = 0;
-        for (let i = 0; i < len; i++) {
-          last = (last + 0.02 * (Math.random() * 2 - 1)) / 1.02;
-          d[i] = last * 3.5;
-        }
-      } else if (kind === 'patter') {
-        // sparse droplets: tiny decaying noise bursts
-        const rate = 420; // drops per second
-        const drops = Math.floor(rate * seconds);
-        for (let k = 0; k < drops; k++) {
-          const at = Math.floor(Math.random() * len);
-          const amp = Math.pow(Math.random(), 2.2) * 0.9;
-          const dur = Math.floor(ctx.sampleRate * (0.002 + Math.random() * 0.006));
-          for (let j = 0; j < dur && at + j < len; j++) {
-            d[at + j] += (Math.random() * 2 - 1) * amp * Math.exp(-j / (dur * 0.25));
-          }
-        }
-      }
-    }
-    return buf;
-  }
-
-  #loop(buffer) {
-    const s = this.ctx.createBufferSource();
-    s.buffer = buffer;
-    s.loop = true;
-    s.start(0, Math.random() * buffer.duration);
-    return s;
-  }
-
-  #buildAmbience() {
-    const ctx = this.ctx;
-    this.ambience = ctx.createGain();
-    this.ambience.gain.value = this.ambienceOn ? 1 : 0;
-    this.ambience.connect(this.master);
-
-    // rain: soft wash + patter
-    this.rainGain = ctx.createGain();
-    this.rainGain.gain.value = 0;
-    this.rainGain.connect(this.ambience);
-
-    const wash = this.#loop(this.#noiseBuffer(5, 'white'));
-    const washHP = new BiquadFilterNode(ctx, { type: 'highpass', frequency: 500 });
-    const washLP = new BiquadFilterNode(ctx, { type: 'lowpass', frequency: 5200, Q: 0.3 });
-    const washG = new GainNode(ctx, { gain: 0.055 });
-    wash.connect(washHP).connect(washLP).connect(washG).connect(this.rainGain);
-
-    const patter = this.#loop(this.#noiseBuffer(6, 'patter'));
-    const patBP = new BiquadFilterNode(ctx, { type: 'bandpass', frequency: 3200, Q: 0.6 });
-    const patG = new GainNode(ctx, { gain: 0.3 });
-    patter.connect(patBP).connect(patG).connect(this.rainGain);
-
-    const body = this.#loop(this.#noiseBuffer(7, 'brown'));
-    const bodyLP = new BiquadFilterNode(ctx, { type: 'lowpass', frequency: 700 });
-    const bodyG = new GainNode(ctx, { gain: 0.11 });
-    body.connect(bodyLP).connect(bodyG).connect(this.rainGain);
-
-    // snow: hushed wind with a slow swell
-    this.windGain = ctx.createGain();
-    this.windGain.gain.value = 0;
-    this.windGain.connect(this.ambience);
-    const wind = this.#loop(this.#noiseBuffer(8, 'brown'));
-    const windBP = new BiquadFilterNode(ctx, { type: 'bandpass', frequency: 420, Q: 0.8 });
-    const windG = new GainNode(ctx, { gain: 0.16 });
-    const lfo = new OscillatorNode(ctx, { frequency: 0.07 });
-    const lfoAmt = new GainNode(ctx, { gain: 180 });
-    lfo.connect(lfoAmt).connect(windBP.frequency);
-    lfo.start();
-    wind.connect(windBP).connect(windG).connect(this.windGain);
-
-    this.brown = this.#noiseBuffer(4, 'brown');
-  }
-
-  setWeather(kind) {
-    this.weather = kind;
-    if (!this.ctx) return;
-    const now = this.ctx.currentTime;
-    const ramp = (param, v) => {
-      param.cancelScheduledValues(now);
-      param.setValueAtTime(param.value, now);
-      param.linearRampToValueAtTime(v, now + 2.2);
-    };
-    ramp(this.rainGain.gain, kind === 'rain' ? 1 : 0);
-    ramp(this.windGain.gain, kind === 'snow' ? 1 : 0);
-  }
-
-  setAmbience(on) {
-    this.ambienceOn = on;
-    store.set('ambience', on);
-    if (!this.ctx) return;
-    const now = this.ctx.currentTime;
-    const g = this.ambience.gain;
-    g.cancelScheduledValues(now);
-    g.setValueAtTime(g.value, now);
-    g.linearRampToValueAtTime(on ? 1 : 0, now + 0.8);
-  }
-
-  thunder() {
-    if (!this.ctx || !this.ambienceOn || this.weather !== 'rain') return;
-    const ctx = this.ctx;
-    const delay = 0.8 + Math.random() * 2.2; // sound arrives after the flash
-    const at = ctx.currentTime + delay;
-    const src = ctx.createBufferSource();
-    src.buffer = this.brown;
-    const lp = new BiquadFilterNode(ctx, { type: 'lowpass', frequency: 160 + Math.random() * 120 });
-    const g = new GainNode(ctx, { gain: 0 });
-    const peak = 0.35 + Math.random() * 0.25;
-    g.gain.setValueAtTime(0, at);
-    g.gain.linearRampToValueAtTime(peak, at + 0.18);
-    g.gain.linearRampToValueAtTime(peak * 0.55, at + 0.7);
-    g.gain.exponentialRampToValueAtTime(0.0001, at + 3.8);
-    src.connect(lp).connect(g).connect(this.ambience);
-    src.start(at);
-    src.stop(at + 4);
   }
 
   // ── transport ──

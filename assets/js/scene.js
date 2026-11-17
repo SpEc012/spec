@@ -54,11 +54,10 @@ export class CityScene {
     this.pointer = new THREE.Vector2();
     this.pointerSmooth = new THREE.Vector2();
     this.audioLevel = 0;
-    this.weather = { rain: 0, snow: 0, targetRain: 1, targetSnow: 0 };
+    this.weather = { rain: 0, snow: 0, targetRain: 0, targetSnow: 1 };
     this.flash = 0;
     this.nextLightning = 18 + Math.random() * 20;
     this.nextShootingStar = 5 + Math.random() * 6;
-    this.onLightning = null;
     this.pixelMode = false;
     this.qualityScale = 1;
     this.running = false;
@@ -880,9 +879,14 @@ export class CityScene {
   }
 
   // ───────────── public api ─────────────
-  setWeather(kind) {
-    this.weather.targetRain = kind === 'rain' ? 1 : 0;
-    this.weather.targetSnow = kind === 'snow' ? 1 : 0;
+  setWeather(kind, instant = false) {
+    const W = this.weather;
+    W.targetRain = kind === 'rain' ? 1 : 0;
+    W.targetSnow = kind === 'snow' ? 1 : 0;
+    if (instant) {
+      W.rain = W.targetRain;
+      W.snow = W.targetSnow;
+    }
   }
 
   setPointer(x, y) {
@@ -967,7 +971,6 @@ export class CityScene {
       this.nextLightning = 22 + Math.random() * 35;
       if (W.rain > 0.6 && !this.reducedMotion) {
         this.flashSeq = [0, 0.09, 0.22, 0.31].map((o, i) => ({ at: t + o, amp: [0.6, 0.22, 0.8, 0.3][i] }));
-        this.onLightning?.();
       }
     }
     let flash = this.flash * Math.exp(-dt * 9);
