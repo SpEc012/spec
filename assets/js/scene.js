@@ -557,7 +557,7 @@ export class CityScene {
             gl_Position = projectionMatrix * mv;
             float blink = pow(max(sin(uTime * 1.6 + aPhase), 0.0), 8.0);
             vA = 0.25 + blink;
-            gl_PointSize = (6.0 + blink * 6.0) * uPR * (220.0 / -mv.z);
+            gl_PointSize = min((6.0 + blink * 6.0) * uPR * (220.0 / max(-mv.z, 1.0)), 64.0);
           }`,
         fragmentShader: /* glsl */ `
           varying float vA;
@@ -626,7 +626,7 @@ export class CityScene {
             gl_Position = projectionMatrix * mv;
             float fog = fogFactor(-mv.z, uFogDensity);
             vCol = aColor * (1.0 - fog * 0.85);
-            gl_PointSize = aData.y * uPR * (120.0 / -mv.z) + 1.0;
+            gl_PointSize = min(aData.y * uPR * (120.0 / max(-mv.z, 1.0)) + 1.0, 64.0);
           }`,
         fragmentShader: /* glsl */ `
           varying vec3 vCol;
@@ -818,7 +818,7 @@ export class CityScene {
           p.z += cos(uTime * (0.25 + aRand * 0.4) + aRand * 23.0) * 1.2;
           vec4 mv = modelViewMatrix * vec4(p, 1.0);
           gl_Position = projectionMatrix * mv;
-          gl_PointSize = (0.35 + aRand * 0.65) * uPR * (240.0 / -mv.z);
+          gl_PointSize = min((0.35 + aRand * 0.65) * uPR * (240.0 / max(-mv.z, 1.0)), 48.0);
           vA = (0.35 + 0.55 * aRand) * smoothstep(0.0, 4.0, y) * smoothstep(H, H - 8.0, y);
           vA *= smoothstep(160.0, 40.0, -mv.z) * smoothstep(4.0, 14.0, -mv.z);
         }`,

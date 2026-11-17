@@ -588,8 +588,6 @@ function initCursor() {
   if (!finePointer) return;
   document.body.classList.add('custom-cursor');
   const cur = document.querySelector('.cursor');
-  const ring = cur.querySelector('.cursor-ring');
-  const dot = cur.querySelector('.cursor-dot');
   const canvas = $('sparkles');
   const ctx = canvas.getContext('2d');
   const dpr = Math.min(devicePixelRatio || 1, 2);
@@ -603,7 +601,6 @@ function initCursor() {
   const COLORS = ['#ff6fd8', '#6ff0ff', '#b49cff', '#ffe2ff'];
   const parts = [];
   const pos = { x: innerWidth / 2, y: innerHeight / 2 };
-  const ringPos = { ...pos };
   let last = { ...pos };
 
   const spawn = (x, y, n, burst = false) => {
@@ -629,6 +626,8 @@ function initCursor() {
     cur.classList.add('is-active');
     pos.x = e.clientX;
     pos.y = e.clientY;
+    // move the dot + ring as one, right on the pointer
+    cur.style.transform = `translate3d(${pos.x}px, ${pos.y}px, 0)`;
     if (Math.hypot(pos.x - last.x, pos.y - last.y) > 14) {
       spawn(pos.x, pos.y, 1);
       last = { ...pos };
@@ -644,10 +643,6 @@ function initCursor() {
 
   const loop = () => {
     requestAnimationFrame(loop);
-    ringPos.x += (pos.x - ringPos.x) * 0.2;
-    ringPos.y += (pos.y - ringPos.y) * 0.2;
-    dot.style.transform = `translate(${pos.x}px, ${pos.y}px) translate(-50%, -50%)`;
-    ring.style.transform = `translate(${ringPos.x}px, ${ringPos.y}px) translate(-50%, -50%)`;
 
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     for (let i = parts.length - 1; i >= 0; i--) {
