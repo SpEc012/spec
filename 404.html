@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>lost in the city ✦ 404</title>
+    <meta name="theme-color" content="#0b0418" />
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%8C%99%3C/text%3E%3C/svg%3E" />
+    <link href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@400;500&display=swap" rel="stylesheet" />
+    <style>
+      :root {
+        --pink: #ff6fd8;
+        --cyan: #6ff0ff;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        margin: 0;
+        height: 100%;
+      }
+      body {
+        display: grid;
+        place-items: center;
+        padding: 16px;
+        color: #f4ecff;
+        font-family: 'Pixelify Sans', monospace;
+        text-align: center;
+        background:
+          radial-gradient(120% 60% at 50% 100%, rgba(122, 40, 140, 0.55), transparent 60%),
+          linear-gradient(#05010c, #140630 55%, #2f1157);
+        overflow: hidden;
+      }
+      .rain {
+        position: fixed;
+        inset: 0;
+        pointer-events: none;
+        background-image: linear-gradient(transparent 0 70%, rgba(190, 170, 255, 0.35) 70% 100%);
+        background-size: 2px 46px;
+        mask-image: repeating-linear-gradient(90deg, #000 0 2px, transparent 2px 37px);
+        animation: fall 0.6s linear infinite;
+        opacity: 0.5;
+      }
+      @keyframes fall {
+        to {
+          background-position: 0 46px;
+        }
+      }
+      h1 {
+        margin: 0;
+        font-size: clamp(64px, 18vw, 140px);
+        font-weight: 500;
+        letter-spacing: 0.08em;
+        background: linear-gradient(100deg, var(--cyan), #b9a2ff, var(--pink));
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+        filter: drop-shadow(0 0 18px rgba(255, 111, 216, 0.5));
+      }
+      p {
+        margin: 12px 0 28px;
+        letter-spacing: 0.14em;
+        color: #c2b0e2;
+      }
+      a {
+        display: inline-block;
+        padding: 12px 22px;
+        border-radius: 14px;
+        letter-spacing: 0.14em;
+        color: #fff;
+        text-decoration: none;
+        background: rgba(255, 255, 255, 0.06);
+        border: 1px solid rgba(255, 111, 216, 0.5);
+        box-shadow: 0 0 24px -6px var(--pink);
+        transition: transform 0.25s, background 0.25s;
+      }
+      a:hover {
+        transform: translateY(-3px);
+        background: rgba(255, 111, 216, 0.14);
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .rain {
+          animation: none;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="rain" aria-hidden="true"></div>
+    <main>
+      <h1>404</h1>
+      <p>you wandered off into the rain ☾</p>
+      <a href="./" id="home">take me home</a>
+    </main>
+    <script>
+      // works on a project page (/spec/) or a custom domain (/)
+      const seg = location.pathname.split('/').filter(Boolean)[0];
+      if (seg && location.hostname.endsWith('github.io')) document.getElementById('home').href = '/' + seg + '/';
+      else document.getElementById('home').href = '/';
+    </script>
+  </body>
+</html>
